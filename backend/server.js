@@ -12,9 +12,9 @@ app.use(express.json());
 const db = mysql.createPool({
   host: process.env.DB_HOST || "127.0.0.1",
   user: process.env.DB_USER || "root",
-  password: process.env.DB_PASS || "abcd1234",
+  password: process.env.DB_PASS || "abc123",
   database: process.env.DB_NAME || "anmlocal",
-  port: process.env.DB_PORT || 3307,
+  port: process.env.DB_PORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -24,7 +24,7 @@ app.get("/api/data", (req, res) => {
   const { search = "", sort = "create_time", order = "desc", page = 1, limit = 100 } = req.query;
   const offset = (page - 1) * limit;
 
-  let query = `SELECT * FROM nannies_nanny WHERE CONCAT_WS('', first_name, last_name, email) LIKE ? ORDER BY ${sort} ${order} LIMIT ? OFFSET ?`;
+  let query = `SELECT * FROM nannies_nanny WHERE CONCAT_WS('', favourite, first_name, last_name, email, state) LIKE ? ORDER BY ${sort} ${order} LIMIT ? OFFSET ?`;
   let values = [`%${search}%`, parseInt(limit), parseInt(offset)];
 
   db.query(query, values, (err, results) => {
@@ -34,7 +34,7 @@ app.get("/api/data", (req, res) => {
     }
 
     db.query(
-      "SELECT COUNT(*) AS total FROM nannies_nanny WHERE CONCAT_WS('', first_name, last_name, email) LIKE ?",
+      "SELECT COUNT(*) AS total FROM nannies_nanny WHERE CONCAT_WS('', favourite, first_name, last_name, email, state) LIKE ?",
       [`%${search}%`],
       (countErr, countResults) => {
         if (countErr) {
