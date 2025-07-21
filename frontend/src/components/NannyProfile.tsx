@@ -1,6 +1,60 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { fetchNannyById } from '../api';
+import { DocumentDuplicateIcon } from '@heroicons/react/24/outline';
+
+interface NotesFieldProps {
+  value: string | null;
+  label: string;
+}
+
+const NotesField: React.FC<NotesFieldProps> = ({ value, label }) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    if (textareaRef.current) {
+      navigator.clipboard.writeText(textareaRef.current.value)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        });
+    }
+  };
+
+  return (
+    <div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 border-b border-gray-100 dark:border-gray-700">
+      <div className="flex justify-between items-start">
+        <dt className="text-sm font-medium text-gray-500 dark:text-gray-300">
+          {label}
+        </dt>
+        <button
+          onClick={handleCopy}
+          className="ml-2 p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+          title="Copy notes"
+        >
+          <DocumentDuplicateIcon className="h-4 w-4" />
+          {copied && (
+            <span className="sr-only">Copied!</span>
+          )}
+        </button>
+      </div>
+      <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
+        <textarea
+          ref={textareaRef}
+          readOnly
+          value={value || ''}
+          className="w-full h-32 p-2 bg-gray-50 dark:bg-gray-700 rounded border border-gray-300 dark:border-gray-600 text-sm"
+        />
+        {copied && (
+          <div className="text-xs text-green-500 mt-1">
+            Copied to clipboard!
+          </div>
+        )}
+      </dd>
+    </div>
+  );
+};
 
 const NannyProfile = () => {
   const { id } = useParams<{ id: string }>();
@@ -100,6 +154,17 @@ const NannyProfile = () => {
               return null;
             }
 
+            // Handle notes with copy functionality
+            if (key === 'notes') {
+              return (
+                <NotesField
+                  key={key}
+                  value={value as string}
+                  label={formatFieldName(key)}
+                />
+              );
+            }
+
             // Format the value for display
             let displayValue: React.ReactNode = String(value);
 
@@ -108,7 +173,6 @@ const NannyProfile = () => {
               try {
                 displayValue = new Date(value as string).toLocaleString();
               } catch (e) {
-                // If date parsing fails, just use the raw value
                 console.error('Error parsing date:', e);
               }
             }
