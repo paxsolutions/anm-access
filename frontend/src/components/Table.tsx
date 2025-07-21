@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { fetchData } from "../api";
+import { useHistory } from "react-router-dom";
+import { fetchNannies } from "../api";
 
 interface DataItem {
   id: number;
@@ -20,14 +21,24 @@ const Table = () => {
   const [total, setTotal] = useState(0);
   const limit = 100;
 
+  const history = useHistory();
+
   useEffect(() => {
     const loadData = async () => {
-      const response = await fetchData(search, sort, order, page, limit);
+      const response = await fetchNannies(search, sort, order, page, limit);
       setData(response.data);
       setTotal(response.total);
     };
     loadData();
   }, [search, sort, order, page]);
+
+  const handleRowClick = (id: number, e: React.MouseEvent) => {
+    // Don't navigate if clicking on a link or button inside the row
+    if ((e.target as HTMLElement).closest('a, button, input, select, textarea')) {
+      return;
+    }
+    history.push(`/nanny/${id}`);
+  };
 
   const toggleSort = (column: string) => {
     setSort(column);
@@ -149,7 +160,8 @@ const Table = () => {
               data.map((item) => (
                 <tr
                   key={item.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150"
+                  onClick={(e) => handleRowClick(item.id, e)}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer"
                 >
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
                     {item.id}

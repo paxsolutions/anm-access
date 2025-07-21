@@ -20,7 +20,8 @@ const db = mysql.createPool({
   queueLimit: 0,
 });
 
-app.get("/api/data", (req, res) => {
+// Get all nannies with pagination and search
+app.get("/api/nannies", (req, res) => {
   const { search = "", sort = "create_time", order = "desc", page = 1, limit = 100 } = req.query;
   const offset = (page - 1) * limit;
 
@@ -44,6 +45,24 @@ app.get("/api/data", (req, res) => {
         res.json({ data: results, total: countResults[0].total });
       }
     );
+  });
+});
+
+// Get a single nanny by ID with all fields
+app.get("/api/nannies/:id", (req, res) => {
+  const { id } = req.params;
+
+  db.query('SELECT * FROM nannies_nanny WHERE id = ?', [id], (err, results) => {
+    if (err) {
+      console.error("Query Error:", err);
+      return res.status(500).json({ error: err.message });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Nanny not found' });
+    }
+
+    res.json(results[0]);
   });
 });
 
