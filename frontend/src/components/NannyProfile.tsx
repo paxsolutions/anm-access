@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
-import { fetchNannyById } from '../api';
-import { DocumentDuplicateIcon } from '@heroicons/react/24/outline';
+import { fetchNannyById, getFileDownloadUrl } from '../api';
+import { DocumentDuplicateIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 
 interface NotesFieldProps {
   value: string | null;
@@ -49,6 +49,80 @@ const NotesField: React.FC<NotesFieldProps> = ({ value, label }) => {
         {copied && (
           <div className="text-xs text-green-500 mt-1">
             Copied to clipboard!
+          </div>
+        )}
+      </dd>
+    </div>
+  );
+};
+
+interface FileFieldProps {
+  value: string | null;
+  label: string;
+  fileKey: string | null;
+  isPhoto?: boolean;
+}
+
+const FileField: React.FC<FileFieldProps> = ({ value, label, fileKey, isPhoto = false }) => {
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownload = async () => {
+    if (!fileKey) return;
+
+    setIsDownloading(true);
+    try {
+      // Add 'nannies/' prefix if not already present
+      let processedKey = fileKey;
+      if (!processedKey.startsWith('nannies/')) {
+        processedKey = `nannies/${processedKey}`;
+      }
+
+      // Add 'photos/' prefix for photos if not already present
+      if (isPhoto && !processedKey.includes('/photos/')) {
+        const parts = processedKey.split('/');
+        const filename = parts.pop();
+        processedKey = [...parts, 'photos', filename].join('/');
+      }
+
+      const downloadUrl = await getFileDownloadUrl(processedKey);
+      if (downloadUrl) {
+        // Create a temporary anchor element to trigger the download
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.setAttribute('download', fileKey.split('/').pop() || 'download');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    } catch (error) {
+      console.error('Error downloading file:', error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
+  if (!fileKey) return null;
+
+  return (
+    <div className="px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 border-b border-gray-100 dark:border-gray-700">
+      <dt className="text-sm font-medium text-gray-500 dark:text-gray-300">
+        {label}
+      </dt>
+      <dd className="mt-1 text-sm text-gray-900 dark:text-gray-100 sm:mt-0 sm:col-span-2">
+        <div className="flex items-center">
+          <span className="truncate">{value || 'View File'}</span>
+          <button
+            onClick={handleDownload}
+            disabled={isDownloading}
+            className="ml-2 p-1 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 disabled:opacity-50"
+            title="Download file"
+          >
+            <ArrowDownTrayIcon className="h-4 w-4" />
+          </button>
+        </div>
+        {isDownloading && (
+          <div className="text-xs text-blue-500 mt-1">
+            Preparing download...
           </div>
         )}
       </dd>
@@ -160,6 +234,19 @@ const NannyProfile = () => {
                 <NotesField
                   key={key}
                   value={value as string}
+                  label={formatFieldName(key)}
+                />
+              );
+            }
+
+            // Handle file downloads
+            if ((key === 'upload_file' || key === 'upload_photo') && value) {
+              return (
+                <FileField
+                  key={key}
+                  value={value as string}
+                  fileKey={value as string}
+                  isPhoto={key === 'upload_photo'}
                   label={formatFieldName(key)}
                 />
               );

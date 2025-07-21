@@ -39,3 +39,16 @@ export const fetchNannyById = async (id: number): Promise<Nanny | null> => {
     return null;
   }
 };
+
+// Generate a pre-signed URL for a file
+export const getFileDownloadUrl = async (key: string): Promise<string | null> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/files/presigned-url`, {
+      params: { key }
+    });
+    return response.data.url;
+  } catch (error) {
+    console.error('Error generating download URL:', error);
+    return null;
+  }
+};
