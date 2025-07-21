@@ -8,10 +8,14 @@ services:
       - "5001:5000"
     environment:
       - NODE_ENV=development
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - FRONTEND_URL=http://localhost:3000
       - DB_HOST=db
       - DB_USER=${DB_USER:-anm_user}
       - DB_PASSWORD=${DB_PASSWORD:-anm_password}
-      - DB_NAME=${DB_NAME:-anm_db}
+      - DB_NAME=${DB_NAME:-anm_local}
       - DB_PORT=${DB_PORT:-3306}
       - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
       - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
@@ -28,6 +32,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: anm-app-frontend
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL}
     ports:
       - "3000:80"
     depends_on:

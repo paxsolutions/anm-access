@@ -1,98 +1,137 @@
-import React, { useState, useEffect } from "react";
-import { BrowserRouter as Router, Route, Switch, useHistory } from "react-router-dom";
+import React from "react";
+import { BrowserRouter as Router, Route, Switch, Redirect, useHistory } from "react-router-dom";
 import { SunIcon, MoonIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Table from "./components/Table";
 import NannyProfile from "./components/NannyProfile";
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import Login from './pages/Login';
 import './App.css';
 
-// Define the type for the Layout component props
 interface LayoutProps {
   children: React.ReactNode;
   showBackButton?: boolean;
 }
 
-const App = () => {
-  const [darkMode, setDarkMode] = useState(() => {
-    // Check for saved theme preference or use system preference
-    if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('theme');
-      if (savedTheme) return savedTheme === 'dark';
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
+const Layout: React.FC<LayoutProps> = ({ children, showBackButton = false }) => {
+  const [darkMode, setDarkMode] = React.useState(false);
+  const history = useHistory();
 
-  useEffect(() => {
-    // Apply the theme class to the root element
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [darkMode]);
+  React.useEffect(() => {
+    const isDark = localStorage.getItem('darkMode') === 'true' ||
+                  (!localStorage.getItem('darkMode') &&
+                   window.matchMedia('(prefers-color-scheme: dark)').matches);
+    setDarkMode(isDark);
+    document.documentElement.classList.toggle('dark', isDark);
+  }, []);
 
-  // Layout component to share common UI between routes
-  const Layout: React.FC<LayoutProps> = ({ children, showBackButton = false }) => {
-    const history = useHistory();
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem('darkMode', String(newMode));
+    document.documentElement.classList.toggle('dark', newMode);
+  };
 
-    return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center">
-              {showBackButton && (
-                <button
-                  onClick={() => history.goBack()}
-                  className="mr-4 p-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                  aria-label="Go back"
-                >
-                  <ArrowLeftIcon className="h-5 w-5" />
-                </button>
-              )}
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {showBackButton ? 'Nanny Profile' : 'ANM Legacy'}
-              </h1>
-            </div>
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-              aria-label="Toggle dark mode"
-            >
-              {darkMode ? <SunIcon className="h-5 w-5" /> : <MoonIcon className="h-5 w-5" />}
-            </button>
-          </div>
-          <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-lg transition-colors duration-200">
-            {children}
-          </div>
-        </div>
-      </div>
-    );
+  const navigateBack = () => {
+    history.goBack();
   };
 
   return (
-    <Router>
-      <Switch>
-        <Route
-          exact
-          path="/"
-          render={() => (
-            <Layout>
-              <Table />
-            </Layout>
-          )}
-        />
-        <Route
-          path="/nanny/:id"
-          render={() => (
-            <Layout showBackButton={true}>
-              <NannyProfile />
-            </Layout>
-          )}
-        />
-      </Switch>
-    </Router>
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center space-x-4">
+            {showBackButton && (
+              <button
+                onClick={navigateBack}
+                className="p-2 rounded-full text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                <ArrowLeftIcon className="h-5 w-5" />
+              </button>
+            )}
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Old Database
+            </h1>
+          </div>
+          <button
+            onClick={toggleDarkMode}
+            className="p-2 rounded-full text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+          >
+            {darkMode ? (
+              <SunIcon className="h-5 w-5" />
+            ) : (
+              <MoonIcon className="h-5 w-5" />
+            )}
+          </button>
+        </div>
+        <div className="bg-white dark:bg-gray-800 p-6 shadow-lg rounded-lg transition-colors duration-200">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+interface PrivateRouteProps {
+  children: React.ReactNode;
+  path: string;
+  exact?: boolean;
+}
+
+const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, ...rest }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-white"></div>
+      </div>
+    );
+  }
+
+  return (
+    <Route
+      {...rest}
+      render={({ location }) =>
+        user ? (
+          children
+        ) : (
+          <Redirect
+            to={{
+              pathname: "/login",
+              state: { from: location }
+            }}
+          />
+        )
+      }
+    />
+  );
+};
+
+const App: React.FC = () => {
+  return (
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <Switch>
+            <Route path="/login" component={Login} />
+            <PrivateRoute path="/" exact>
+              <Layout>
+                <Table />
+              </Layout>
+            </PrivateRoute>
+            <PrivateRoute path="/nanny/:id">
+              <Layout showBackButton>
+                <NannyProfile />
+              </Layout>
+            </PrivateRoute>
+            <Route path="*">
+              <Redirect to="/" />
+            </Route>
+          </Switch>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 };
 
