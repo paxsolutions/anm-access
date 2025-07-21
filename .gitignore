@@ -9,3 +9,4 @@ frontend/.env
 frontend/build
 frontend/logs
 frontend/node_modules
+data

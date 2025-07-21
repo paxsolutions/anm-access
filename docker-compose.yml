@@ -1,0 +1,70 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: anm-app-backend
+    ports:
+      - "5001:5000"
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=db
+      - DB_USER=${DB_USER:-anm_user}
+      - DB_PASSWORD=${DB_PASSWORD:-anm_password}
+      - DB_NAME=${DB_NAME:-anm_db}
+      - DB_PORT=${DB_PORT:-3306}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+    depends_on:
+      - db
+    restart: unless-stopped
+    networks:
+      - anm-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: anm-app-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - anm-network
+
+  db:
+    image: mysql:8.0
+    container_name: anm-db
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-anm_db}
+      MYSQL_USER: ${DB_USER:-anm_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-anm_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./data:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    networks:
+      - anm-network
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+    networks:
+      - anm-network
+
+networks:
+  anm-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
