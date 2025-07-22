@@ -32,6 +32,28 @@ This directory contains scripts for deploying the ANM nanny management app to AW
 ./destroy.sh
 ```
 
+## New AWS Account Deployment
+
+To deploy to a new AWS account:
+
+1. **Copy S3 buckets** (if needed):
+   ```bash
+   # Edit the script to set DEST_PROFILE
+   ./copy-s3-cross-account.sh
+   ```
+
+2. **Configure environment**:
+   ```bash
+   # Copy template and update with new account values
+   cp ../.env.new-account-template ../.env
+   # Edit .env with your new account credentials
+   ```
+
+3. **Deploy to new account**:
+   ```bash
+   ./deploy-new-account.sh
+   ```
+
 ## Prerequisites
 - AWS CLI configured with appropriate permissions
 - Docker installed and running
