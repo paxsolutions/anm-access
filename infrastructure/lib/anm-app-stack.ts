@@ -36,22 +36,9 @@ export class AnmAppStack extends cdk.Stack {
       ],
     });
 
-    // Create ECR repositories
-    const backendRepo = new ecr.Repository(this, 'AnmBackendRepo', {
-      repositoryName: 'anm-backend',
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-      lifecycleRules: [{
-        maxImageCount: 10,
-      }],
-    });
-
-    const frontendRepo = new ecr.Repository(this, 'AnmFrontendRepo', {
-      repositoryName: 'anm-frontend',
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
-      lifecycleRules: [{
-        maxImageCount: 10,
-      }],
-    });
+    // Reference existing ECR repositories
+    const backendRepo = ecr.Repository.fromRepositoryName(this, 'AnmBackendRepo', 'anm-backend');
+    const frontendRepo = ecr.Repository.fromRepositoryName(this, 'AnmFrontendRepo', 'anm-frontend');
 
     // Create database credentials secret
     const dbSecret = new secretsmanager.Secret(this, 'AnmDbSecret', {
@@ -203,7 +190,8 @@ export class AnmAppStack extends cdk.Stack {
         DB_HOST: database.instanceEndpoint.hostname,
         DB_PORT: '3306',
         DB_NAME: 'anm_db',
-        AWS_REGION: this.region,
+        AWS_REGION: cdk.Stack.of(this).region,
+        FRONTEND_URL: `http://${alb.loadBalancerDnsName}`,
       },
       secrets: {
         DB_USER: ecs.Secret.fromSecretsManager(dbSecret, 'username'),

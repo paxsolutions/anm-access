@@ -49,9 +49,6 @@ const Layout: React.FC<LayoutProps> = ({ children, showBackButton = false }) => 
                 <ArrowLeftIcon className="h-5 w-5" />
               </button>
             )}
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Old Database
-            </h1>
           </div>
           <button
             onClick={toggleDarkMode}
