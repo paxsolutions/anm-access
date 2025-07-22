@@ -10,3 +10,5 @@ frontend/build
 frontend/logs
 frontend/node_modules
 data
+infrastructure/cdk.out
+infrastructure/node_modules

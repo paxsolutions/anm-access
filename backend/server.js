@@ -3,6 +3,7 @@ const express = require("express");
 const session = require('express-session');
 const passport = require('./config/passport');
 const authRoutes = require('./routes/auth');
+const healthRoutes = require('./routes/health');
 const mysql = require("mysql2");
 const cors = require("cors");
 const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
@@ -42,7 +43,9 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Routes
 app.use('/auth', authRoutes);
+app.use('/api', healthRoutes);
 
 const db = mysql.createPool({
   host: process.env.DB_HOST,
