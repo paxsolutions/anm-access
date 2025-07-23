@@ -17,5 +17,13 @@
     "us-east-1d",
     "us-east-1e",
     "us-east-1f"
-  ]
+  ],
+  "hosted-zone:account=495212154549:domainName=paxsolutions.biz:region=us-east-1": {
+    "Id": "/hostedzone/Z0139720E6HGA5IYE8LC",
+    "Name": "paxsolutions.biz."
+  },
+  "hosted-zone:account=016848803218:domainName=paxsolutions.biz:region=us-east-1": {
+    "Id": "/hostedzone/Z054249311O5K89AT63BF",
+    "Name": "paxsolutions.biz."
+  }
 }

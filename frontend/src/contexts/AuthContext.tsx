@@ -29,7 +29,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setState(prev => ({ ...prev, ...newState }));
   }, []);
 
+  const validateToken = useCallback(async (token: string) => {
+    try {
+      setState(prev => ({ ...prev, loading: true, error: null }));
+      const { data } = await api.post<UserProfile>('/auth/validate_token', { token });
+
+      setState({ user: data, loading: false, error: null });
+      return data;
+    } catch (error) {
+      console.error('Token validation failed:', error);
+      setState({ user: null, loading: false, error: null });
+      return null;
+    }
+  }, []);
+
   const checkUserLoggedIn = useCallback(async () => {
+    // First check if there's a token in the URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+
+    if (token) {
+      // Clear the token from URL
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete('token');
+      window.history.replaceState({}, '', newUrl.toString());
+
+      // Validate the token
+      return await validateToken(token);
+    }
+
     try {
       setState(prev => ({ ...prev, loading: true, error: null }));
       const { data } = await api.get<UserProfile>('/auth/current_user');
@@ -59,7 +87,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       return null;
     }
-  }, []);
+  }, [validateToken]);
 
   const login = useCallback(() => {
     // Store the current path to redirect back after login

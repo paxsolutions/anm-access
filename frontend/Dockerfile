@@ -10,10 +10,14 @@ RUN apk add --no-cache python3 make g++
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --legacy-peer-deps
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
+
+# Accept API URL as build argument
+ARG REACT_APP_API_URL=http://localhost:5001
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
 # Set environment to production
 ENV NODE_ENV=production

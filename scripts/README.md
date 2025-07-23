@@ -8,6 +8,9 @@ This directory contains scripts for deploying the ANM nanny management app to AW
 1. **`setup-ecr.sh`** - Creates ECR repositories and pushes initial Docker images
 2. **`deploy-infrastructure.sh`** - Deploys the CDK infrastructure stack
 
+### SSL/Domain Deployment
+- **`deploy-with-ssl.sh`** - Deploy with custom domain and SSL certificate
+
 ### Regular Updates
 - **`update-images.sh`** - Updates Docker images and redeploys ECS services (for code changes)
 

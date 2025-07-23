@@ -7,6 +7,9 @@ import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as certificatemanager from 'aws-cdk-lib/aws-certificatemanager';
+import * as route53 from 'aws-cdk-lib/aws-route53';
+import * as route53targets from 'aws-cdk-lib/aws-route53-targets';
 import { Construct } from 'constructs';
 
 export class AnmAppStack extends cdk.Stack {
@@ -97,6 +100,19 @@ export class AnmAppStack extends cdk.Stack {
       vpc,
       clusterName: 'anm-cluster',
       containerInsights: true,
+    });
+
+    // Domain configuration
+    const domainName = 'legacy.paxsolutions.biz';
+    const rootDomain = 'paxsolutions.biz';
+
+    // Lookup existing hosted zone
+    const hostedZone = route53.HostedZone.fromLookup(this, 'AnmHostedZone', {
+      domainName: rootDomain,
+    });
+    const certificate = new certificatemanager.Certificate(this, 'AnmCertificate', {
+      domainName: 'legacy.paxsolutions.biz',
+      validation: certificatemanager.CertificateValidation.fromDns(hostedZone),
     });
 
     // Create Application Load Balancer
@@ -191,7 +207,9 @@ export class AnmAppStack extends cdk.Stack {
         DB_PORT: '3306',
         DB_NAME: 'anm_db',
         AWS_REGION: cdk.Stack.of(this).region,
-        FRONTEND_URL: `http://${alb.loadBalancerDnsName}`,
+        FRONTEND_URL: 'https://legacy.paxsolutions.biz',
+        API_BASE_URL: 'https://legacy.paxsolutions.biz',
+        REACT_APP_API_URL: 'https://legacy.paxsolutions.biz',
       },
       secrets: {
         DB_USER: ecs.Secret.fromSecretsManager(dbSecret, 'username'),
@@ -290,15 +308,15 @@ export class AnmAppStack extends cdk.Stack {
     backendService.attachToApplicationTargetGroup(backendTargetGroup);
     frontendService.attachToApplicationTargetGroup(frontendTargetGroup);
 
-    // Create ALB listener
-    const listener = alb.addListener('AnmListener', {
+    // Create standard HTTP listener
+    const httpListener = alb.addListener('AnmListener', {
       port: 80,
       protocol: elbv2.ApplicationProtocol.HTTP,
       defaultAction: elbv2.ListenerAction.forward([frontendTargetGroup]),
     });
 
-    // Add API routing
-    listener.addAction('ApiRouting', {
+    // Add API routing to HTTP listener
+    httpListener.addAction('ApiRouting', {
       priority: 100,
       conditions: [
         elbv2.ListenerCondition.pathPatterns(['/api/*', '/auth/*']),
@@ -306,10 +324,62 @@ export class AnmAppStack extends cdk.Stack {
       action: elbv2.ListenerAction.forward([backendTargetGroup]),
     });
 
+    // SSL and custom domain configuration (commented out until Route53 is set up)
+    // Uncomment the following when you have Route53 hosted zone ready:
+    //
+    const httpsListener = alb.addListener('AnmHttpsListener', {
+      port: 443,
+      protocol: elbv2.ApplicationProtocol.HTTPS,
+      certificates: [certificate],
+      defaultAction: elbv2.ListenerAction.forward([frontendTargetGroup]),
+    });
+
+    // Add API routing to HTTPS listener
+    httpsListener.addAction('ApiRouting', {
+      priority: 100,
+      conditions: [
+        elbv2.ListenerCondition.pathPatterns(['/api/*', '/auth/*']),
+      ],
+      action: elbv2.ListenerAction.forward([backendTargetGroup]),
+    });
+
+    // Change HTTP listener to redirect to HTTPS
+    httpListener.addAction('RedirectToHttps', {
+      priority: 200,
+      conditions: [elbv2.ListenerCondition.pathPatterns(['*'])],
+      action: elbv2.ListenerAction.redirect({
+        protocol: 'HTTPS',
+        port: '443',
+        permanent: true,
+      }),
+    });
+
+    // Create Route 53 record pointing to ALB
+    new route53.ARecord(this, 'AnmAliasRecord', {
+      zone: hostedZone,
+      recordName: domainName,
+      target: route53.RecordTarget.fromAlias(new route53targets.LoadBalancerTarget(alb)),
+    });
+
     // Outputs
     new cdk.CfnOutput(this, 'LoadBalancerDNS', {
       value: alb.loadBalancerDnsName,
       description: 'DNS name of the load balancer',
+    });
+
+    new cdk.CfnOutput(this, 'ApplicationUrl', {
+      value: `https://${domainName}`,
+      description: 'HTTPS URL of the application',
+    });
+
+    new cdk.CfnOutput(this, 'DomainName', {
+      value: domainName,
+      description: 'Custom domain name for the application',
+    });
+
+    new cdk.CfnOutput(this, 'LoadBalancerUrl', {
+      value: `http://${alb.loadBalancerDnsName}`,
+      description: 'Direct ALB URL (for reference)',
     });
 
     new cdk.CfnOutput(this, 'BackendRepositoryUri', {

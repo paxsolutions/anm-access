@@ -1,6 +1,7 @@
 require("dotenv").config({ path: "../.env" });
 const express = require("express");
 const session = require('express-session');
+const MySQLStore = require('express-mysql-session')(session);
 const passport = require('./config/passport');
 const authRoutes = require('./routes/auth');
 const healthRoutes = require('./routes/health');
@@ -23,22 +24,69 @@ const S3_BUCKET = process.env.S3_BUCKET_NAME;
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Initialize MySQL session store
+let sessionStore;
+
+if (process.env.NODE_ENV === 'production') {
+  // Use MySQL for production (shared session store)
+  const sessionStoreOptions = {
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT || 3306,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    clearExpired: true,
+    checkExpirationInterval: 900000, // 15 minutes
+    expiration: 86400000, // 24 hours
+    createDatabaseTable: true,
+    schema: {
+      tableName: 'sessions',
+      columnNames: {
+        session_id: 'session_id',
+        expires: 'expires',
+        data: 'data'
+      }
+    }
+  };
+
+  try {
+    sessionStore = new MySQLStore(sessionStoreOptions);
+    console.log('✅ Using MySQL session store');
+  } catch (error) {
+    console.warn('Failed to initialize MySQL session store:', error.message);
+    sessionStore = undefined; // Will use default MemoryStore
+  }
+} else {
+  console.log('📝 Using MemoryStore for development');
+}
+
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3000',
   credentials: true
 }));
 app.use(express.json());
 
-// Session configuration
+// Session configuration with MySQL store
 app.use(session({
+  store: sessionStore, // Will be MySQL in production, MemoryStore in dev
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
+  name: 'anm.session.id',
   cookie: {
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax'
+    // No domain restriction - let browser handle it automatically
   }
 }));
+
+console.log('Session configuration:');
+console.log('- NODE_ENV:', process.env.NODE_ENV);
+console.log('- FRONTEND_URL:', process.env.FRONTEND_URL);
+console.log('- Cookie secure:', process.env.NODE_ENV === 'production');
+console.log('- Cookie sameSite:', process.env.NODE_ENV === 'production' ? 'none' : 'lax');
 
 app.use(passport.initialize());
 app.use(passport.session());
