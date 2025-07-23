@@ -69,8 +69,15 @@ router.post('/validate_token', (req, res) => {
       emails: [{ value: userData.email }]
     };
 
+    console.log('Storing user in session:', req.session.user);
+    console.log('Session ID after token validation:', req.sessionID);
+
     req.session.save((err) => {
-      if (err) console.error('Session save error:', err);
+      if (err) {
+        console.error('Session save error:', err);
+      } else {
+        console.log('Session saved successfully for token validation');
+      }
       res.json({
         id: userData.id,
         displayName: userData.name,

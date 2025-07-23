@@ -74,10 +74,11 @@ app.use(session({
   saveUninitialized: false,
   name: 'anm.session.id',
   cookie: {
+    path: '/',
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax'
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
     // No domain restriction - let browser handle it automatically
   }
 }));

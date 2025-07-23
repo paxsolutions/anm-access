@@ -34,10 +34,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setState(prev => ({ ...prev, loading: true, error: null }));
       const { data } = await api.post<UserProfile>('/auth/validate_token', { token });
 
+      // Store user data in localStorage for persistence
+      localStorage.setItem('anm_user', JSON.stringify(data));
+      localStorage.setItem('anm_auth_time', Date.now().toString());
+
       setState({ user: data, loading: false, error: null });
       return data;
     } catch (error) {
       console.error('Token validation failed:', error);
+      localStorage.removeItem('anm_user');
+      localStorage.removeItem('anm_auth_time');
       setState({ user: null, loading: false, error: null });
       return null;
     }
@@ -56,6 +62,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       // Validate the token
       return await validateToken(token);
+    }
+
+    // Check localStorage for persisted user data
+    const storedUser = localStorage.getItem('anm_user');
+    const storedAuthTime = localStorage.getItem('anm_auth_time');
+
+    if (storedUser && storedAuthTime) {
+      const authTime = parseInt(storedAuthTime);
+      const now = Date.now();
+      const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+
+      // Check if stored auth is still valid (not expired)
+      if (now - authTime < maxAge) {
+        try {
+          const userData = JSON.parse(storedUser);
+          setState({ user: userData, loading: false, error: null });
+          return userData;
+        } catch (error) {
+          console.error('Error parsing stored user data:', error);
+          localStorage.removeItem('anm_user');
+          localStorage.removeItem('anm_auth_time');
+        }
+      } else {
+        // Auth expired, clear localStorage
+        localStorage.removeItem('anm_user');
+        localStorage.removeItem('anm_auth_time');
+      }
     }
 
     try {
@@ -101,6 +134,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setState(prev => ({ ...prev, loading: true }));
       await axios.post('/auth/logout');
+
+      // Clear localStorage
+      localStorage.removeItem('anm_user');
+      localStorage.removeItem('anm_auth_time');
+
       setState({ user: null, loading: false, error: null });
       // Don't redirect here - let the component handle the redirect
     } catch (error) {
