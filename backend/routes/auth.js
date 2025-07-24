@@ -13,10 +13,6 @@ router.get('/google/callback',
     failureRedirect: '/login'
   }),
   (req, res) => {
-    console.log('OAuth callback successful, user:', req.user);
-    console.log('Session ID:', req.sessionID);
-    console.log('Session data:', req.session);
-
     // Generate a simple token and store user in session
     const token = Buffer.from(JSON.stringify({
       id: req.user.id,
@@ -31,8 +27,6 @@ router.get('/google/callback',
       if (err) console.error('Session save error:', err);
 
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      console.log('Redirecting to:', `${frontendUrl}?token=${token}`);
-
       // Redirect with token in URL as fallback
       res.redirect(`${frontendUrl}?token=${token}`);
     });
@@ -69,15 +63,8 @@ router.post('/validate_token', (req, res) => {
       emails: [{ value: userData.email }]
     };
 
-    console.log('Storing user in session:', req.session.user);
-    console.log('Session ID after token validation:', req.sessionID);
-
     req.session.save((err) => {
-      if (err) {
-        console.error('Session save error:', err);
-      } else {
-        console.log('Session saved successfully for token validation');
-      }
+      if (err) console.error('Session save error:', err);
       res.json({
         id: userData.id,
         displayName: userData.name,
@@ -93,15 +80,6 @@ router.post('/validate_token', (req, res) => {
 
 // Get current user
 router.get('/current_user', (req, res) => {
-  console.log('Current user check:');
-  console.log('Headers:', req.headers);
-  console.log('Cookies:', req.headers.cookie);
-  console.log('Session ID:', req.sessionID);
-  console.log('Session data:', req.session);
-  console.log('User:', req.user);
-  console.log('Session user:', req.session.user);
-  console.log('Is authenticated:', req.isAuthenticated());
-
   // Return session user if passport user is not available
   const user = req.user || req.session.user;
   res.json(user || {});

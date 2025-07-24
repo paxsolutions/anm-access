@@ -59,7 +59,7 @@ docker push $BACKEND_REPO_URI:latest
 
 # Use custom domain for frontend API URL
 CUSTOM_DOMAIN="legacy.paxsolutions.biz"
-API_URL="http://$CUSTOM_DOMAIN"
+API_URL="https://$CUSTOM_DOMAIN"
 echo "🌐 Using custom domain for frontend: $CUSTOM_DOMAIN"
 
 # Build and push frontend image with API URL

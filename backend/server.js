@@ -51,13 +51,10 @@ if (process.env.NODE_ENV === 'production') {
 
   try {
     sessionStore = new MySQLStore(sessionStoreOptions);
-    console.log('✅ Using MySQL session store');
   } catch (error) {
     console.warn('Failed to initialize MySQL session store:', error.message);
     sessionStore = undefined; // Will use default MemoryStore
   }
-} else {
-  console.log('📝 Using MemoryStore for development');
 }
 
 app.use(cors({

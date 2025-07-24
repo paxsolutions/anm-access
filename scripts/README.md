@@ -1,39 +1,78 @@
 # ANM App Deployment Scripts
 
-This directory contains scripts for deploying the ANM nanny management app to AWS using CDK.
+This directory contains scripts for deploying and managing the ANM (A Nanny Match) application on AWS.
 
-## Deployment Workflow
+## Main Deployment Scripts
 
-### Initial Setup (run once)
-1. **`setup-ecr.sh`** - Creates ECR repositories and pushes initial Docker images
-2. **`deploy-infrastructure.sh`** - Deploys the CDK infrastructure stack
+### `deploy-infrastructure.sh`
+Deploys the AWS infrastructure using CDK:
+- VPC, subnets, security groups
+- RDS MySQL database
+- Application Load Balancer with SSL
+- ECS cluster and services
+- ECR repositories
 
-### SSL/Domain Deployment
-- **`deploy-with-ssl.sh`** - Deploy with custom domain and SSL certificate
+### `setup-ecr.sh`
+Sets up ECR repositories and builds initial Docker images:
+- Creates ECR repositories if they don't exist
+- Builds and pushes initial backend and frontend images
 
-### Regular Updates
-- **`update-images.sh`** - Updates Docker images and redeploys ECS services (for code changes)
+### `update-images.sh`
+Updates application images and redeploys services:
+- Builds new Docker images with latest code (clean build with --no-cache)
+- Uses HTTPS URLs for production
+- Pushes to ECR
+- Forces ECS service redeployment
 
-### Monitoring & Management
-- **`check-status.sh`** - Checks ECS services status and health
-- **`destroy.sh`** - Destroys the entire infrastructure (use with caution)
+## Utility Scripts
 
-## Usage Examples
+### `check-status.sh`
+Checks the status of deployed services and infrastructure
 
-```bash
-# Initial deployment
-./setup-ecr.sh
-./deploy-infrastructure.sh
+### `check-backend-logs.sh`
+Retrieves recent backend logs for debugging
 
-# Update application code
-./update-images.sh
+### `destroy.sh`
+Destroys the entire infrastructure (use with caution)
 
-# Check deployment status
-./check-status.sh
+### `copy-s3-cross-account.sh`
+Copies S3 bucket contents between AWS accounts
 
-# Clean up (destroys everything)
-./destroy.sh
-```
+## Authentication System
+
+The app uses a hybrid authentication system:
+- **Token-based auth**: OAuth callback generates secure token in URL redirect
+- **MySQL session store**: Replaces MemoryStore for ECS persistence
+- **localStorage persistence**: 24-hour client-side storage for page refresh persistence
+- **HTTPS enforcement**: All API calls use HTTPS to prevent mixed content errors
+
+## Usage
+
+1. First time deployment:
+   ```bash
+   ./deploy-infrastructure.sh
+   ./setup-ecr.sh
+   ```
+
+2. Update application code:
+   ```bash
+   ./update-images.sh
+   ```
+
+3. Check deployment status:
+   ```bash
+   ./check-status.sh
+   ```
+
+4. Debug backend issues:
+   ```bash
+   ./check-backend-logs.sh
+   ```
+
+5. Clean up (destroys everything)
+   ```bash
+   ./destroy.sh
+   ```
 
 ## New AWS Account Deployment
 

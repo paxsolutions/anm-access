@@ -52,10 +52,11 @@ docker tag anm-backend:latest $BACKEND_REPO_URI:latest
 echo "📤 Pushing backend image to ECR..."
 docker push $BACKEND_REPO_URI:latest
 
-# Build and push frontend image
-echo "🔨 Building frontend image..."
+# Build and push frontend image (initial build uses localhost for now)
+echo "🔨 Building frontend image (initial build)..."
 cd ../frontend
-docker build -t anm-frontend .
+echo "Note: Using localhost for initial build. Run update-images.sh after infrastructure deployment to use production URL."
+docker build --build-arg REACT_APP_API_URL=http://localhost:5001 -t anm-frontend .
 docker tag anm-frontend:latest $FRONTEND_REPO_URI:latest
 
 echo "📤 Pushing frontend image to ECR..."
