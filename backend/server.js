@@ -80,11 +80,11 @@ app.use(session({
   }
 }));
 
-console.log('Session configuration:');
-console.log('- NODE_ENV:', process.env.NODE_ENV);
-console.log('- FRONTEND_URL:', process.env.FRONTEND_URL);
-console.log('- Cookie secure:', process.env.NODE_ENV === 'production');
-console.log('- Cookie sameSite:', process.env.NODE_ENV === 'production' ? 'none' : 'lax');
+// console.log('Session configuration:');
+// console.log('- NODE_ENV:', process.env.NODE_ENV);
+// console.log('- FRONTEND_URL:', process.env.FRONTEND_URL);
+// console.log('- Cookie secure:', process.env.NODE_ENV === 'production');
+// console.log('- Cookie sameSite:', process.env.NODE_ENV === 'production' ? 'none' : 'lax');
 
 app.use(passport.initialize());
 app.use(passport.session());

@@ -61,7 +61,7 @@ export const fetchNannyById = async (id: number): Promise<Nanny | null> => {
 // Generate a pre-signed URL for a file
 export const getFileDownloadUrl = async (key: string): Promise<string | null> => {
   try {
-    const response = await api.get<{ url: string }>(`/api/files/url`, {
+    const response = await api.get<{ url: string }>(`/api/files/presigned-url`, {
       params: { key }
     });
     return response.data.url;
