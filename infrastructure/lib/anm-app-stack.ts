@@ -174,6 +174,8 @@ export class AnmAppStack extends cdk.Stack {
       resources: [
         `arn:aws:s3:::${process.env.S3_BUCKET_NAME || ''}`,
         `arn:aws:s3:::${process.env.S3_BUCKET_NAME || ''}/*`,
+        `arn:aws:s3:::${process.env.S3_IMPORT_BUCKET || ''}`,
+        `arn:aws:s3:::${process.env.S3_IMPORT_BUCKET || ''}/*`,
       ],
     }));
 
