@@ -12,6 +12,9 @@ import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as route53targets from 'aws-cdk-lib/aws-route53-targets';
 import { Construct } from 'constructs';
 
+import * as dotenv from 'dotenv';
+dotenv.config({ path: '../.env' });
+
 export class AnmAppStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
@@ -47,7 +50,7 @@ export class AnmAppStack extends cdk.Stack {
     const dbSecret = new secretsmanager.Secret(this, 'AnmDbSecret', {
       secretName: 'anm-db-credentials',
       generateSecretString: {
-        secretStringTemplate: JSON.stringify({ username: 'anm_user' }),
+        secretStringTemplate: JSON.stringify({ username: process.env.DB_USER }),
         generateStringKey: 'password',
         excludeCharacters: '"@/\\\'',
         passwordLength: 32,
@@ -84,7 +87,7 @@ export class AnmAppStack extends cdk.Stack {
         subnetType: ec2.SubnetType.PRIVATE_ISOLATED,
       },
       credentials: rds.Credentials.fromSecret(dbSecret),
-      databaseName: 'anm_db',
+      databaseName: process.env.DB_NAME,
       securityGroups: [dbSecurityGroup],
       backupRetention: cdk.Duration.days(7),
       deletionProtection: false, // Set to true for production
@@ -205,11 +208,11 @@ export class AnmAppStack extends cdk.Stack {
         NODE_ENV: 'production',
         DB_HOST: database.instanceEndpoint.hostname,
         DB_PORT: '3306',
-        DB_NAME: 'anm_db',
+        DB_NAME: process.env.DB_NAME || '',
         AWS_REGION: cdk.Stack.of(this).region,
-        FRONTEND_URL: 'https://legacy.paxsolutions.biz',
-        API_BASE_URL: 'https://legacy.paxsolutions.biz',
-        REACT_APP_API_URL: 'https://legacy.paxsolutions.biz',
+        FRONTEND_URL: process.env.FRONTEND_URL || '',
+        API_BASE_URL: process.env.API_BASE_URL || '',
+        REACT_APP_API_URL: process.env.REACT_APP_API_URL || '',
       },
       secrets: {
         DB_USER: ecs.Secret.fromSecretsManager(dbSecret, 'username'),

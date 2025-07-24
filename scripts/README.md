@@ -18,11 +18,42 @@ Sets up ECR repositories and builds initial Docker images:
 - Builds and pushes initial backend and frontend images
 
 ### `update-images.sh`
-Updates application images and redeploys services:
+
+Primary script for code updates
+
+- Updates application images and redeploys services:
 - Builds new Docker images with latest code (clean build with --no-cache)
 - Uses HTTPS URLs for production
 - Pushes to ECR
 - Forces ECS service redeployment
+
+### `deploy-infrastructure.sh`
+deploy-infrastructure.sh
+ - Main infrastructure deployment
+
+### `setup-ecr.sh`
+setup-ecr.sh
+ - Initial ECR setup and image builds
+
+### `update-images.sh`
+update-images.sh
+ - Primary script for code updates (now always clean builds with HTTPS)
+
+### `deploy-complete.sh`
+deploy-complete.sh
+ - Complete deployment workflow
+
+### `deploy-new-account.sh`
+deploy-new-account.sh
+ - New account setup
+
+### `deploy-with-ssl.sh`
+deploy-with-ssl.sh
+ - SSL-enabled deployment
+
+### `setup-ssl-domain.sh`
+setup-ssl-domain.sh
+ - SSL certificate setup
 
 ## Utility Scripts
 
@@ -34,9 +65,6 @@ Retrieves recent backend logs for debugging
 
 ### `destroy.sh`
 Destroys the entire infrastructure (use with caution)
-
-### `copy-s3-cross-account.sh`
-Copies S3 bucket contents between AWS accounts
 
 ## Authentication System
 
