@@ -57,10 +57,15 @@ docker tag anm-backend:latest $BACKEND_REPO_URI:latest
 echo "📤 Pushing backend image to ECR..."
 docker push $BACKEND_REPO_URI:latest
 
-# Build and push frontend image
-echo "🔨 Building frontend image..."
+# Use custom domain for frontend API URL
+CUSTOM_DOMAIN="legacy.paxsolutions.biz"
+API_URL="http://$CUSTOM_DOMAIN"
+echo "🌐 Using custom domain for frontend: $CUSTOM_DOMAIN"
+
+# Build and push frontend image with API URL
+echo "🔨 Building frontend image with API URL: $API_URL"
 cd ../frontend
-docker build -t anm-frontend .
+docker build --no-cache --build-arg REACT_APP_API_URL=$API_URL -t anm-frontend .
 docker tag anm-frontend:latest $FRONTEND_REPO_URI:latest
 
 echo "📤 Pushing frontend image to ECR..."
